@@ -1,11 +1,31 @@
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.io as pio
 from pathlib import Path
+
+pio.renderers.default = "browser"
 
 # Carrega os dados do CSV
 def carrega_dados(caminho):
     df = pd.read_csv(caminho)
     df.columns = df.columns.str.strip()
+
+    # Normaliza e converte colunas numéricas que vêm como string
+    if "Price (in USD)" in df.columns:
+        df["Price (in USD)"] = pd.to_numeric(
+            df["Price (in USD)"].astype(str).str.replace(r'[$,]', '', regex=True),
+            errors="coerce",
+        )
+
+    if "Horsepower" in df.columns:
+        df["Horsepower"] = pd.to_numeric(
+            df["Horsepower"].astype(str).str.extract(r"(\d+\.?\d*)", expand=False),
+            errors="coerce",
+        )
+
+    if "Year" in df.columns:
+        df["Year"] = pd.to_numeric(df["Year"], errors="coerce").astype("Int64")
+
     return df
 
 
@@ -70,49 +90,53 @@ def grafico_pizza_marcas(df):
     outros = contagem.iloc[10:].sum()
     dados = pd.concat([top, pd.Series({"Outros": outros})])
 
-    plt.figure(figsize=(8, 8))
-    plt.pie(dados, labels=dados.index, autopct="%1.1f%%", startangle=140)
-    plt.title("Distribuição de Modelos por Marca (Top 10 + Outros)")
-    plt.tight_layout()
-    plt.show()
+    fig = px.pie(
+        values=dados.values,
+        names=dados.index,
+        title="Distribuição de Modelos por Marca (Top 10 + Outros)",
+        hole=0.35,
+    )
+    fig.show()
 
 
-def grafico_barras_decada(df):
-    copia = df.copy()
-    copia["Década"] = (copia["Year"] // 10 * 10).astype(str) + "s"
-    resultado = copia.groupby("Década")["Price (in USD)"].mean().sort_index()
+def grafico_media_preco_ano(df):
+    copia = df.dropna(subset=["Year", "Price (in USD)"]).copy()
+    resultado = copia.groupby("Year")["Price (in USD)"].mean().sort_index()
 
-    plt.figure(figsize=(10, 5))
-    resultado.plot(kind="bar", color="steelblue")
-    plt.title("Preço Médio por Década")
-    plt.xlabel("Década")
-    plt.ylabel("Preço Médio (USD)")
-    plt.tight_layout()
-    plt.show()
+    fig = px.bar(
+        x=resultado.index.astype(int),
+        y=resultado.values,
+        title="Preço Médio por Ano",
+        labels={"x": "Ano", "y": "Preço Médio (USD)"},
+    )
+    fig.show()
 
 
 def grafico_linha_ano(df):
     resultado = df.groupby("Year")["Price (in USD)"].mean().sort_index()
 
-    plt.figure(figsize=(12, 5))
-    plt.plot(resultado.index, resultado.values, marker="o", color="crimson", linewidth=2)
-    plt.title("Evolução do Preço Médio por Ano")
-    plt.xlabel("Ano")
-    plt.ylabel("Preço Médio (USD)")
-    plt.tight_layout()
-    plt.show()
+    fig = px.line(
+        x=resultado.index.astype(int),
+        y=resultado.values,
+        markers=True,
+        title="Evolução do Preço Médio por Ano",
+        labels={"x": "Ano", "y": "Preço Médio (USD)"},
+    )
+    fig.show()
 
 
 def grafico_potencia_vs_preco(df):
     limpo = df.dropna(subset=["Horsepower", "Price (in USD)"])
 
-    plt.figure(figsize=(10, 6))
-    plt.scatter(limpo["Horsepower"], limpo["Price (in USD)"], alpha=0.4, color="darkorange")
-    plt.title("Potência vs Preço")
-    plt.xlabel("Potência (hp)")
-    plt.ylabel("Preço (USD)")
-    plt.tight_layout()
-    plt.show()
+    fig = px.scatter(
+        limpo,
+        x="Horsepower",
+        y="Price (in USD)",
+        title="Potência vs Preço",
+        opacity=0.4,
+        labels={"Horsepower": "Potência (hp)", "Price (in USD)": "Preço (USD)"},
+    )
+    fig.show()
 
 
 # Menu principal
@@ -151,7 +175,7 @@ while True:
     print("3. Comparar duas marcas")
     print("4. Análise por ano")
     print("5. Gráfico de pizza por marca")
-    print("6. Gráfico de barras por década")
+    print("6. Gráfico de barras de média de preço por ano")
     print("7. Gráfico de linha por ano")
     print("8. Gráfico de potência vs preço")
     print("0. Sair")
@@ -169,7 +193,7 @@ while True:
     elif opcao == "5":
         grafico_pizza_marcas(dados)
     elif opcao == "6":
-        grafico_barras_decada(dados)
+        grafico_media_preco_ano(dados)
     elif opcao == "7":
         grafico_linha_ano(dados)
     elif opcao == "8":

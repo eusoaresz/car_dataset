@@ -1,3 +1,4 @@
+from cProfile import label
 import csv
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -156,30 +157,34 @@ def grafico_pizza_marcas(carros):
     plt.show()
 
 
-def grafico_barras_preco(carros):
-    faixas = {
-        "Ate 100k": 0,
-        "100k-300k": 0,
-        "300k-1M": 0,
-        "Acima de 1M": 0,
-    }
-    
+def grafico_media_preco_ano(carros):
+    medias = {}
     for carro in carros:
-        preco = carro["preco"]
-        if preco <= 100_000:
-            faixas["Ate 100k"] += 1
-        elif preco <= 300_000:
-            faixas["100k-300k"] += 1
-        elif preco <= 1_000_000:
-            faixas["300k-1M"] += 1
-        else:
-            faixas["Acima de 1M"] += 1
+        if carro["ano"] is not None:
+            ano = carro["ano"]
+            if ano not in medias:
+                medias[ano] = []
+            medias[ano].append(carro["preco"])
     
-    labels = list(faixas.keys())
-    valores = list(faixas.values())
+    for ano in medias:
+        medias[ano] = sum(medias[ano]) / len(medias[ano])
+    
+    anos = sorted(medias.keys())
+    valores = [medias[a] for a in anos]
     
     plt.figure(figsize=(10, 6))
-    barras = plt.bar(labels, valores, color=["#264653", "#2a9d8f", "#e9c46a", "#e76f51"])
+    plt.plot(anos, valores, marker="o", linewidth=2)
+    plt.title("Média de Preço por Ano")
+    plt.xlabel("Ano")
+    plt.ylabel("Média de Preço (USD)")
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig("media_preco_por_ano.png", dpi=150)
+    plt.show()
+        
+    
+    plt.figure(figsize=(10, 6))
+    barras = plt.bar(label, valores, color=["#264653", "#2a9d8f", "#e9c46a", "#e76f51"])
     plt.title("Numero de modelos por faixa de preco")
     plt.ylabel("Quantidade de modelos")
     plt.xticks(rotation=15)
