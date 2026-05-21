@@ -1,28 +1,8 @@
-from cProfile import label
 import csv
 from pathlib import Path
 import matplotlib.pyplot as plt
-
 raiz = Path(__file__).parent.parent
-arquivo_csv = None
-
-# Procura o arquivo CSV
-nomes_csv = [
-    raiz / "Sport car price.csv",
-    raiz / "Sport_car_price.csv",
-    raiz / "sport_car_price.csv",
-    raiz / "sport car price.csv",
-]
-for arquivo in nomes_csv:
-    if arquivo.exists():
-        arquivo_csv = arquivo
-        break
-
-if arquivo_csv is None:
-    for arquivo in raiz.iterdir():
-        if arquivo.suffix.lower() == ".csv":
-            arquivo_csv = arquivo
-            break
+arquivo_csv = raiz / "Sport_car_price.csv"
 
 
 # Carrega os dados
@@ -83,7 +63,19 @@ def top_10_antigos_e_novos(carros):
 
 
 def compara_duas_marcas(carros):
-    marcas = sorted({c["marca"] for c in carros})
+    def pega_marca(carro):
+        return carro.get("marca") or carro.get("Car Make", "")
+
+    def pega_preco(carro):
+        if "preco" in carro:
+            return carro["preco"]
+        valor = str(carro.get("Price (in USD)", "0")).replace(",", "").replace("\"", "")
+        try:
+            return float(valor)
+        except ValueError:
+            return 0.0
+
+    marcas = sorted({pega_marca(c) for c in carros if pega_marca(c)})
     
     print("\nMarcas disponíveis:")
     for marca in marcas:
@@ -93,7 +85,7 @@ def compara_duas_marcas(carros):
     marca2 = input("Digite a segunda marca: ").strip()
     
     def calcula_media(marca):
-        precos = [c["preco"] for c in carros if c["marca"].lower() == marca.lower()]
+        precos = [pega_preco(c) for c in carros if pega_marca(c).lower() == marca.lower()]
         if not precos:
             return None
         return sum(precos) / len(precos)
@@ -180,36 +172,4 @@ def grafico_media_preco_ano(carros):
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig("media_preco_por_ano.png", dpi=150)
-    plt.show()
-        
-    
-    plt.figure(figsize=(10, 6))
-    barras = plt.bar(label, valores, color=["#264653", "#2a9d8f", "#e9c46a", "#e76f51"])
-    plt.title("Numero de modelos por faixa de preco")
-    plt.ylabel("Quantidade de modelos")
-    plt.xticks(rotation=15)
-    plt.bar_label(barras)
-    plt.tight_layout()
-    plt.savefig("modelos_por_faixa_preco_colunas.png", dpi=150)
-    plt.show()
-
-
-def grafico_linha_ano(carros):
-    contagem = {}
-    for carro in carros:
-        if carro["ano"] is not None:
-            ano = carro["ano"]
-            contagem[ano] = contagem.get(ano, 0) + 1
-    
-    anos = sorted(contagem.keys())
-    valores = [contagem[a] for a in anos]
-    
-    plt.figure(figsize=(10, 6))
-    plt.plot(anos, valores, marker="o", linewidth=2)
-    plt.title("Numero de modelos por ano")
-    plt.xlabel("Ano")
-    plt.ylabel("Quantidade de modelos")
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig("modelos_por_ano_linhas.png", dpi=150)
     plt.show()

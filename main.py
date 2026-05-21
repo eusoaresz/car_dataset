@@ -1,9 +1,6 @@
 import pandas as pd
 import plotly.express as px
-import plotly.io as pio
 from pathlib import Path
-
-pio.renderers.default = "browser"
 
 # Carrega os dados do CSV
 def carrega_dados(caminho):
@@ -20,6 +17,12 @@ def carrega_dados(caminho):
     if "Horsepower" in df.columns:
         df["Horsepower"] = pd.to_numeric(
             df["Horsepower"].astype(str).str.extract(r"(\d+\.?\d*)", expand=False),
+            errors="coerce",
+        )
+
+    if "0-60 MPH Time (seconds)" in df.columns:
+        df["0-60 MPH Time (seconds)"] = pd.to_numeric(
+            df["0-60 MPH Time (seconds)"].astype(str).str.extract(r"(\d+\.?\d*)", expand=False),
             errors="coerce",
         )
 
@@ -111,34 +114,6 @@ def grafico_media_preco_ano(df):
     )
     fig.show()
 
-
-def grafico_linha_ano(df):
-    resultado = df.groupby("Year")["Price (in USD)"].mean().sort_index()
-
-    fig = px.line(
-        x=resultado.index.astype(int),
-        y=resultado.values,
-        markers=True,
-        title="Evolução do Preço Médio por Ano",
-        labels={"x": "Ano", "y": "Preço Médio (USD)"},
-    )
-    fig.show()
-
-
-def grafico_potencia_vs_preco(df):
-    limpo = df.dropna(subset=["Horsepower", "Price (in USD)"])
-
-    fig = px.scatter(
-        limpo,
-        x="Horsepower",
-        y="Price (in USD)",
-        title="Potência vs Preço",
-        opacity=0.4,
-        labels={"Horsepower": "Potência (hp)", "Price (in USD)": "Preço (USD)"},
-    )
-    fig.show()
-
-
 # Menu principal
 def acha_csv():
     raiz = Path(__file__).parent
@@ -157,7 +132,6 @@ def acha_csv():
     return None
 
 
-# Carregamento do CSV
 caminho_csv = acha_csv()
 if caminho_csv:
     dados = carrega_dados(caminho_csv)
@@ -167,7 +141,6 @@ else:
     exit()
 
 
-# Loop do menu
 while True:
     print("\n=== Sport Car Price ===")
     print("1. Top 10 marcas por preço médio")
@@ -176,8 +149,6 @@ while True:
     print("4. Análise por ano")
     print("5. Gráfico de pizza por marca")
     print("6. Gráfico de barras de média de preço por ano")
-    print("7. Gráfico de linha por ano")
-    print("8. Gráfico de potência vs preço")
     print("0. Sair")
 
     opcao = input("\nEscolha uma opção: ").strip()
@@ -194,10 +165,6 @@ while True:
         grafico_pizza_marcas(dados)
     elif opcao == "6":
         grafico_media_preco_ano(dados)
-    elif opcao == "7":
-        grafico_linha_ano(dados)
-    elif opcao == "8":
-        grafico_potencia_vs_preco(dados)
     elif opcao == "0":
         print("Saindo...")
         break
