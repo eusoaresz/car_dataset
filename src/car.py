@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 raiz = Path(__file__).parent.parent
 arquivo_csv = raiz / "Sport_car_price.csv"
 
-
-# Carrega os dados
 def carrega_carros(caminho_arquivo=arquivo_csv):
     carros = []
     
@@ -31,7 +29,6 @@ def carrega_carros(caminho_arquivo=arquivo_csv):
                 continue
     
     return carros
-
 
 def formata_preco(valor):
     return f"${valor:,.2f}"
@@ -105,30 +102,19 @@ def compara_duas_marcas(carros):
         print(f"{marca2}: {formata_preco(media2)} (media)")
 
 
-def analisa_por_ano(carros):
-    try:
-        ano = int(input("\nDigite o ano para analise: ").strip())
-    except ValueError:
-        print("Ano invalido.")
-        return
-    
-    todas_marcas = sorted({c["marca"] for c in carros})
-    marcas_com_ano = sorted({c["marca"] for c in carros if c["ano"] == ano})
-    marcas_sem_ano = [m for m in todas_marcas if m not in marcas_com_ano]
-    
-    print(f"\nMarcas com modelos de {ano}")
-    if marcas_com_ano:
-        for marca in marcas_com_ano:
-            print(f"- {marca}")
-    else:
-        print("Nenhuma marca possui modelos desse ano.")
-    
-    print(f"\nMarcas sem modelos de {ano}")
-    if marcas_sem_ano:
-        for marca in marcas_sem_ano:
-            print(f"- {marca}")
-    else:
-        print("Todas as marcas possuem modelos desse ano.")
+def top_10_mais_potentes(carros):
+    def pega_potencia(carro):
+        try:
+            return float(str(carro["potencia"]).split()[0])
+        except (ValueError, IndexError):
+            return 0.0
+
+    ordenados = sorted(carros, key=pega_potencia, reverse=True)[:10]
+
+    print("\nTop 10 carros mais potentes")
+    for i, carro in enumerate(ordenados, start=1):
+        nome = f"{carro['marca']} {carro['modelo']}"
+        print(f"{i:2}. {nome:<40} {carro['potencia']:>8} hp  {formata_preco(carro['preco'])}")
 
 
 # Gráficos

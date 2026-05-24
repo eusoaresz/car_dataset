@@ -6,6 +6,7 @@ from pathlib import Path
 def carrega_dados(caminho):
     df = pd.read_csv(caminho)
     df.columns = df.columns.str.strip()
+    df = df.drop_duplicates()
 
     # Normaliza e converte colunas numéricas que vêm como string
     if "Price (in USD)" in df.columns:
@@ -78,12 +79,14 @@ def compara_duas_marcas(df):
         print(f"  0-60 mph médio:  {filtro['0-60 MPH Time (seconds)'].mean():.2f} s")
 
 
-def analisa_por_ano(df):
-    resultado = df.groupby("Year")["Price (in USD)"].agg(["mean", "count"]).sort_index(ascending=False)
-    print("\n=== Análise por Ano ===")
-    print(f"  {'Ano':<6} {'Qtd':>4}  {'Preço Médio':>14}")
-    for ano, linha in resultado.iterrows():
-        print(f"  {ano:<6} {int(linha['count']):>4}  {formata_preco(linha['mean']):>14}")
+def top_10_mais_potentes(df):
+    cols = ["Car Make", "Car Model", "Year", "Horsepower", "Price (in USD)"]
+    resultado = df.dropna(subset=["Horsepower"]).nlargest(10, "Horsepower")[cols]
+    print("\n=== Top 10 Carros Mais Potentes ===")
+    print(f"  {'Marca/Modelo':<40} {'Ano':>4}  {'Potência':>10}  {'Preço':>14}")
+    for _, linha in resultado.iterrows():
+        nome = f"{linha['Car Make']} {linha['Car Model']}"
+        print(f"  {nome:<40} {linha['Year']:>4}  {int(linha['Horsepower']):>8} hp  {formata_preco(linha['Price (in USD)']):>14}")
 
 
 # Gráficos
@@ -132,41 +135,41 @@ def acha_csv():
     return None
 
 
-caminho_csv = acha_csv()
-if caminho_csv:
-    dados = carrega_dados(caminho_csv)
-    print(f"Dados carregados: {len(dados)} registros, {dados['Car Make'].nunique()} marcas.")
-else:
-    print("Arquivo CSV não encontrado.")
-    exit()
-
-
-while True:
-    print("\n=== Sport Car Price ===")
-    print("1. Top 10 marcas por preço médio")
-    print("2. Top 10 mais caros e mais baratos")
-    print("3. Comparar duas marcas")
-    print("4. Análise por ano")
-    print("5. Gráfico de pizza por marca")
-    print("6. Gráfico de barras de média de preço por ano")
-    print("0. Sair")
-
-    opcao = input("\nEscolha uma opção: ").strip()
-
-    if opcao == "1":
-        top_10_marcas_preco(dados)
-    elif opcao == "2":
-        carros_mais_e_menos_caros(dados)
-    elif opcao == "3":
-        compara_duas_marcas(dados)
-    elif opcao == "4":
-        analisa_por_ano(dados)
-    elif opcao == "5":
-        grafico_pizza_marcas(dados)
-    elif opcao == "6":
-        grafico_media_preco_ano(dados)
-    elif opcao == "0":
-        print("Saindo...")
-        break
+if __name__ == "__main__":
+    caminho_csv = acha_csv()
+    if caminho_csv:
+        dados = carrega_dados(caminho_csv)
+        print(f"Dados carregados: {len(dados)} registros, {dados['Car Make'].nunique()} marcas.")
     else:
-        print("Opção inválida.")
+        print("Arquivo CSV não encontrado.")
+        exit()
+
+    while True:
+        print("\n=== Sport Car Price ===")
+        print("1. Top 10 marcas por preço médio")
+        print("2. Top 10 mais caros e mais baratos")
+        print("3. Comparar duas marcas")
+        print("4. Top 10 mais potentes")
+        print("5. Gráfico de pizza por marca")
+        print("6. Gráfico de barras de média de preço por ano")
+        print("0. Sair")
+
+        opcao = input("\nEscolha uma opção: ").strip()
+
+        if opcao == "1":
+            top_10_marcas_preco(dados)
+        elif opcao == "2":
+            carros_mais_e_menos_caros(dados)
+        elif opcao == "3":
+            compara_duas_marcas(dados)
+        elif opcao == "4":
+            top_10_mais_potentes(dados)
+        elif opcao == "5":
+            grafico_pizza_marcas(dados)
+        elif opcao == "6":
+            grafico_media_preco_ano(dados)
+        elif opcao == "0":
+            print("Saindo...")
+            break
+        else:
+            print("Opção inválida.")
