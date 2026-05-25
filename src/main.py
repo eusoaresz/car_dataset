@@ -2,13 +2,11 @@ import pandas as pd
 import plotly.express as px
 from pathlib import Path
 
-# Carrega os dados do CSV
 def carrega_dados(caminho):
     df = pd.read_csv(caminho)
     df.columns = df.columns.str.strip()
     df = df.drop_duplicates()
 
-    # Normaliza e converte colunas numéricas que vêm como string
     if "Price (in USD)" in df.columns:
         df["Price (in USD)"] = pd.to_numeric(
             df["Price (in USD)"].astype(str).str.replace(r'[$,]', '', regex=True),
@@ -37,7 +35,6 @@ def formata_preco(valor):
     return f"${valor:,.0f}"
 
 
-# Análises
 def top_10_marcas_preco(df):
     resultado = df.groupby("Car Make")["Price (in USD)"].mean().sort_values(ascending=False).head(10)
     print("\n=== Top 10 Marcas por Preço Médio ===")
@@ -89,7 +86,38 @@ def top_10_mais_potentes(df):
         print(f"  {nome:<40} {linha['Year']:>4}  {int(linha['Horsepower']):>8} hp  {formata_preco(linha['Price (in USD)']):>14}")
 
 
-# Gráficos
+def analisa_por_ano(df):
+    anos_disponiveis = sorted(df["Year"].dropna().unique().astype(int))
+    print(f"\nAnos disponíveis: {anos_disponiveis[0]} – {anos_disponiveis[-1]}")
+
+    try:
+        ano = int(input("Digite o ano para análise: ").strip())
+    except ValueError:
+        print("Ano inválido.")
+        return
+
+    todas_marcas  = set(df["Car Make"])
+    marcas_com    = set(df[df["Year"] == ano]["Car Make"].dropna().unique())
+    marcas_sem    = todas_marcas - marcas_com
+
+    print(f"\n=== Análise por Ano: {ano} ===")
+    print(f"  Total de marcas no dataset:      {len(todas_marcas)}")
+    print(f"  Marcas COM modelos em {ano}:     {len(marcas_com)}")
+    print(f"  Marcas SEM modelos em {ano}:     {len(marcas_sem)}")
+
+    if marcas_com:
+        print(f"\n  Marcas presentes em {ano}:")
+        for m in sorted(marcas_com):
+            qtd = len(df[(df["Year"] == ano) & (df["Car Make"] == m)])
+            print(f"    {m:<25} {qtd} modelo(s)")
+    else:
+        print(f"\n  Nenhuma marca possui modelos em {ano}.")
+
+    if marcas_sem:
+        print(f"\n  Marcas ausentes em {ano}:")
+        print("   ", ", ".join(sorted(marcas_sem)))
+
+
 def grafico_pizza_marcas(df):
     contagem = df["Car Make"].value_counts()
     top = contagem.head(10)
@@ -117,7 +145,6 @@ def grafico_media_preco_ano(df):
     )
     fig.show()
 
-# Menu principal
 def acha_csv():
     raiz = Path(__file__).parent
     nomes = [
@@ -152,6 +179,7 @@ if __name__ == "__main__":
         print("4. Top 10 mais potentes")
         print("5. Gráfico de pizza por marca")
         print("6. Gráfico de barras de média de preço por ano")
+        print("7. Análise por ano")
         print("0. Sair")
 
         opcao = input("\nEscolha uma opção: ").strip()
@@ -168,6 +196,8 @@ if __name__ == "__main__":
             grafico_pizza_marcas(dados)
         elif opcao == "6":
             grafico_media_preco_ano(dados)
+        elif opcao == "7":
+            analisa_por_ano(dados)
         elif opcao == "0":
             print("Saindo...")
             break
