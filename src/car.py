@@ -34,7 +34,6 @@ def formata_preco(valor):
     return f"${valor:,.2f}"
 
 
-# Análises
 def top_10_mais_caros(carros):
     ordenados = sorted(carros, key=lambda c: c["preco"], reverse=True)[:10]
     
@@ -116,8 +115,6 @@ def top_10_mais_potentes(carros):
         nome = f"{carro['marca']} {carro['modelo']}"
         print(f"{i:2}. {nome:<40} {carro['potencia']:>8} hp  {formata_preco(carro['preco'])}")
 
-
-# Gráficos
 def grafico_pizza_marcas(carros):
     contagem = {}
     for carro in carros:
